@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Texte &harr; ASCII &harr; Binaire</title>
+
+
+  <style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 14px;line-height:1.45;background:#fafafa}
+h1{margin:0 0 12px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-top:12px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+input,textarea,button{font:inherit}
+input,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px}
+button{padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;background:#f7f7f7;cursor:pointer}
+button:hover{background:#efefef}
+.counts{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.badge{background:#f3f4f6;border:1px solid #e5e7eb;padding:4px 8px;border-radius:999px}
+pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:12px;padding:12px;white-space:pre-wrap;word-break:break-word;margin-top:8px}
+.hint{color:#6b7280;font-size:.92rem;margin-top:6px}
+  </style>
+</head>
+
+
+<body>
+
+<h1 style="margin-top: 0px; height: 34px;">Convertisseur :
+Texte &harr; ASCII &harr; Binaire | &nbsp; <a href="index.html"><img style="border: 0px solid ; width: 157px; height: 38px;" alt="Retour Index" src="index.jpg"></a><!-- TEXTE -> ASCII & BINAIRE --> </h1>
+
+<div class="card">
+<h2 style="margin-top: 0px; height: 30px;">Texte
+&rarr; ASCII et Binaire</h2>
+
+<div class="row"> <input id="inputText" placeholder="Ex. On est bien au pays de Panono" type="text">
+<button id="btnConv">Convertir</button> </div>
+
+<div class="counts"> <span class="badge" id="txtLen">Texte : 0 caract&egrave;re</span> <span class="badge" id="asciiLen" style="display: none;"></span>
+<span class="badge" id="binLen" style="display: none;"></span>
+</div>
+
+<pre id="outAscii"></pre>
+
+<pre id="outBin"></pre>
+
+<!-- <div class="hint"> --><!-- Le comptage correspond &agrave; la longueur des cha&icirc;nes affich&eacute;es :<br> --><!-- &mdash; ASCII = chiffres + espaces<br> --><!-- &mdash; Binaire = 0/1 + espaces par octet --><!-- </div> --> </div>
+
+<!-- ASCII -> TEXTE -->
+<div class="card">
+<h2 style="margin-top: 0px; height: 30px;">ASCII
+&rarr; Texte</h2>
+
+<textarea id="inputAscii" rows="3" placeholder="Ex. 79 110 32 101 115 116 ..."></textarea>
+<button id="btnAscii">D&eacute;coder</button>
+<pre id="outAsciiToText"></pre>
+
+</div>
+
+<!-- BINAIRE -> TEXTE -->
+<div class="card">
+<h2 style="margin-top: 0px; height: 30px;">Binaire
+&rarr; Texte</h2>
+
+<textarea id="inputBin" rows="3" placeholder="Ex. 01001111 01101110 00100000 01100101 ..."></textarea>
+<button id="btnBin">D&eacute;coder</button>
+<pre id="outBinToText"></pre>
+
+</div>
+
+<script>
+const enc = new TextEncoder();
+const dec = new TextDecoder('utf-8');
+function bytesToAsciiString(bytes){ return Array.from(bytes).join(" "); }
+function bytesToBinaryString(bytes){ return Array.from(bytes).map(b=>b.toString(2).padStart(8,'0')).join(" "); }
+function plural(n,s,p){ return n>1?p:s; }
+// TEXTE -> ASCII & BINAIRE
+const inputText = document.getElementById('inputText');
+const btnConv = document.getElementById('btnConv');
+const outAscii = document.getElementById('outAscii');
+const outBin = document.getElementById('outBin');
+const txtLen = document.getElementById('txtLen');
+const asciiLen = document.getElementById('asciiLen');
+const binLen = document.getElementById('binLen');
+function refreshTextLen(){
+const n = (inputText.value ?? "").length;
+txtLen.textContent = `Texte : ${n} ${plural(n,'caractère','caractères')}`;
+}
+inputText.addEventListener('input', refreshTextLen);
+refreshTextLen();
+btnConv.addEventListener('click', () => {
+const text = inputText.value ?? "";
+const bytes = enc.encode(text);
+const asciiStr = bytesToAsciiString(bytes);
+const binStr = bytesToBinaryString(bytes);
+outAscii.textContent = `ASCII : ${asciiStr}`;
+outBin.textContent = `Binaire : ${binStr}`;
+// afficher les compteurs seulement après conversion
+asciiLen.style.display = "inline-block";
+binLen.style.display = "inline-block";
+asciiLen.textContent = `ASCII : ${asciiStr.length} ${plural(asciiStr.length,'caractère','caractères')}`;
+binLen.textContent = `Binaire : ${binStr.length} ${plural(binStr.length,'caractère','caractères')}`;
+});
+// ASCII -> TEXTE
+const inputAscii = document.getElementById('inputAscii');
+const btnAscii = document.getElementById('btnAscii');
+const outAsciiToText = document.getElementById('outAsciiToText');
+btnAscii.addEventListener('click', () => {
+const raw = (inputAscii.value ?? "").trim();
+if (!raw){ outAsciiToText.textContent = "⚠️ Saisis des valeurs ASCII (0–255)."; return; }
+try{
+const tokens = raw.split(/[\s,;]+/).filter(Boolean);
+const bytes = tokens.map(t=>{
+const n = Number(t);
+if (!Number.isInteger(n) || n<0 || n>255) throw new Error(`Valeur invalide: “${t}”`);
+return n;
+});
+const text = dec.decode(new Uint8Array(bytes));
+outAsciiToText.textContent = text;
+}catch(e){ outAsciiToText.textContent = "❌ " + e.message; }
+});
+// BINAIRE -> TEXTE
+const inputBin = document.getElementById('inputBin');
+const btnBin = document.getElementById('btnBin');
+const outBinToText = document.getElementById('outBinToText');
+btnBin.addEventListener('click', () => {
+const raw = (inputBin.value ?? "").trim();
+if (!raw){ outBinToText.textContent = "⚠️ Saisis des octets binaires de 8 bits."; return; }
+try{
+let tokens = raw.split(/\s+/).filter(Boolean);
+if (tokens.length===1 && /^[01]+$/.test(tokens[0]) && tokens[0].length%8===0){
+const arr=[]; for(let i=0;i<tokens[0].length;i+=8){arr.push(tokens[0].slice(i,i+8));}
+tokens = arr;
+}
+const bytes = tokens.map(t=>{
+if (!/^[01]{8}$/.test(t)) throw new Error(`Octet invalide: “${t}”`);
+return parseInt(t,2);
+});
+const text = dec.decode(new Uint8Array(bytes));
+outBinToText.textContent = text;
+}catch(e){ outBinToText.textContent = "❌ " + e.message; }
+});
+</script>
+</body>
+</html>
